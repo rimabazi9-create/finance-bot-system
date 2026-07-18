@@ -1,7 +1,10 @@
 const express = require('express');
+const path = require('path');
 const TronWeb = require('tronweb');
+
 const app = express();
 app.use(express.json());
+app.use(express.static(__dirname)); // للسماح للسيرفر بقراءة ملفات CSS أو JS الملحقة بـ index.html
 
 // إعداد الاتصال بشبكة Shasta الحقيقية
 const tronWeb = new TronWeb({
@@ -9,14 +12,21 @@ const tronWeb = new TronWeb({
     headers: { 'TRON-PRO-API-KEY': 'ضعي_مفتاح_API_الخاص_بك_هنا' } // ضعي مفتاحك من TronGrid
 });
 
-// عملية تحويل تجريبية حقيقية
+// المسار الرئيسي: يعرض واجهة النظام (index.html)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// مسار معالجة التحويلات المالية
 app.post('/transfer', async (req, res) => {
     const { toAddress, amount } = req.body;
     try {
         // إنشاء المعاملة
         const transaction = await tronWeb.transactionBuilder.sendTrx(toAddress, amount * 1000000);
-        // توقيع المعاملة (يتطلب وجود المفتاح الخاص في ملف الأمان)
+        
+        // توقيع المعاملة باستخدام المفتاح السري الموجود في إعدادات Render
         const signedTx = await tronWeb.trx.sign(transaction, process.env.PRIVATE_KEY);
+        
         // إرسال المعاملة إلى البلوكشين
         const receipt = await tronWeb.trx.sendRawTransaction(signedTx);
         
@@ -26,4 +36,5 @@ app.post('/transfer', async (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log('Broker System is Live on Shasta Testnet'));
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Broker System is Live on port ${port}`));
