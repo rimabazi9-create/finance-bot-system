@@ -2,59 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Secure Financial System</title>
+    <title>Financial Broker System</title>
     <style>
-        .container { max-width: 400px; margin: auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input, button { width: 100%; padding: 10px; margin: 10px 0; }
+        body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding-top: 50px; }
+        .box { width: 350px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
         #dashboard { display: none; }
     </style>
 </head>
 <body>
-<div class="container" id="loginArea">
+
+<div class="box" id="loginArea">
     <h2>Login</h2>
     <input type="text" id="user" placeholder="Username">
     <input type="password" id="pass" placeholder="Password">
-    <button onclick="login()">Login</button>
+    <button onclick="login()">Enter System</button>
 </div>
 
-<div class="container" id="dashboard">
-    <h2>Transfer Details</h2>
-    <input type="number" id="totalAmount" placeholder="Amount (USD)">
-    <input type="number" id="receiverRate" placeholder="Receiver Rate (%)">
+<div class="box" id="dashboard">
+    <h2>Broker Dashboard</h2>
+    <input type="number" id="totalAmount" placeholder="Amount (USDT/TRX)">
+    <input type="text" id="receiverAddress" placeholder="Receiver Tron Address">
     <input type="text" id="approvalCode" placeholder="Approval Code">
-    <button onclick="processTransaction()">Process Transaction</button>
+    <button onclick="process()">Process Transaction</button>
     <div id="result"></div>
 </div>
 
 <script>
     async function login() {
-        const res = await fetch('/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                username: document.getElementById('user').value, 
-                password: document.getElementById('pass').value 
-            })
-        });
+        const res = await fetch('/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: document.getElementById('user').value, password: document.getElementById('pass').value }) });
         const data = await res.json();
-        if (data.status === "Success") {
-            document.getElementById('loginArea').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-        } else { alert(data.message); }
+        if (data.status === "Success") { document.getElementById('loginArea').style.display = 'none'; document.getElementById('dashboard').style.display = 'block'; } 
+        else { alert(data.message); }
     }
 
-    async function processTransaction() {
-        const res = await fetch('/process-transaction', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                totalAmount: document.getElementById('totalAmount').value,
-                receiverRate: document.getElementById('receiverRate').value,
-                approvalCode: document.getElementById('approvalCode').value
-            })
-        });
+    async function process() {
+        const res = await fetch('/process-transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ totalAmount: document.getElementById('totalAmount').value, receiverAddress: document.getElementById('receiverAddress').value, approvalCode: document.getElementById('approvalCode').value }) });
         const data = await res.json();
-        document.getElementById('result').innerHTML = data.status === "Success" ? "Transaction successful!" : "Error!";
+        document.getElementById('result').innerText = data.status === "Success" ? "Transaction Verified!" : data.message;
     }
 </script>
 </body>
