@@ -4,33 +4,41 @@ const TronWeb = require('tronweb');
 
 const app = express();
 app.use(express.json());
-app.use(express.static(__dirname)); // للسماح للسيرفر بقراءة ملفات CSS أو JS الملحقة بـ index.html
+// للسماح للسيرفر بتقديم ملفات HTML و CSS
+app.use(express.static(__dirname));
 
-// إعداد الاتصال بشبكة Shasta الحقيقية
+// إعداد الاتصال بشبكة Shasta
 const tronWeb = new TronWeb({
     fullHost: 'https://api.shasta.trongrid.io',
-    headers: { 'TRON-PRO-API-KEY': 'ضعي_مفتاح_API_الخاص_بك_هنا' } // ضعي مفتاحك من TronGrid
+    headers: { 'TRON-PRO-API-KEY': 'ضعي_مفتاح_API_الخاص_بك_هنا' }
 });
 
-// المسار الرئيسي: يعرض واجهة النظام (index.html)
+// المسار الرئيسي لفتح الواجهة
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// مسار معالجة التحويلات المالية
-app.post('/transfer', async (req, res) => {
-    const { toAddress, amount } = req.body;
+// مسار تسجيل الدخول
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    // يمكنك تعديل اسم المستخدم وكلمة المرور هنا
+    if (username === "admin" && password === "1234") {
+        res.json({ status: "Success" });
+    } else {
+        res.json({ status: "Error", message: "بيانات الدخول غير صحيحة" });
+    }
+});
+
+// مسار معالجة المعاملة
+app.post('/process-transaction', async (req, res) => {
+    const { totalAmount, receiverAddress, approvalCode } = req.body;
+    
     try {
-        // إنشاء المعاملة
-        const transaction = await tronWeb.transactionBuilder.sendTrx(toAddress, amount * 1000000);
+        console.log("جاري معالجة معاملة بقيمة:", totalAmount);
         
-        // توقيع المعاملة باستخدام المفتاح السري الموجود في إعدادات Render
-        const signedTx = await tronWeb.trx.sign(transaction, process.env.PRIVATE_KEY);
-        
-        // إرسال المعاملة إلى البلوكشين
-        const receipt = await tronWeb.trx.sendRawTransaction(signedTx);
-        
-        res.json({ status: "Success", txid: receipt.txid });
+        // هنا يمكنك إضافة كود الربط الفعلي مع البلوكشين لاحقاً
+        // حالياً سنعيد نجاح العملية للتأكد من ربط الواجهة
+        res.json({ status: "Success" });
     } catch (error) {
         res.json({ status: "Error", message: error.message });
     }
