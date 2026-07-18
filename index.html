@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>نظام إدارة التحويلات المالي</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 500px; background: #fff; padding: 20px; margin: auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #004a99; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #003366; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>تفاصيل تحويل الأموال</h2>
+    <input type="number" id="totalAmount" placeholder="المبلغ الكلي (USD)">
+    <input type="number" id="receiverRate" placeholder="نسبة المستقبل (%)">
+    <input type="text" id="receiverAddress" placeholder="عنوان محفظة المستقبل">
+    <input type="text" id="senderAddress" placeholder="عنوان محفظة المرسل">
+    <button onclick="processTransaction()">معالجة التفاصيل</button>
+    <div id="result"></div>
+</div>
+
+<script>
+    async function processTransaction() {
+        const data = {
+            totalAmount: document.getElementById('totalAmount').value,
+            receiverRate: document.getElementById('receiverRate').value,
+            receiverAddress: document.getElementById('receiverAddress').value,
+            senderAddress: document.getElementById('senderAddress').value
+        };
+
+        const response = await fetch('/process-transaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        document.getElementById('result').innerHTML = `<p>الحالة: ${result.status}</p><p>حصة المستقبل: ${result.details.receiverShare}</p>`;
+    }
+</script>
+
+</body>
+</html>
