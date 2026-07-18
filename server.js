@@ -42,7 +42,24 @@ app.post('/process-transaction', async (req, res) => {
     } catch (error) {
         res.json({ status: "Error", message: error.message });
     }
+});// مسار معالجة المعاملة المحدث
+app.post('/process-transaction', async (req, res) => {
+    const { totalAmount, receiverAddress, approvalCode } = req.body;
+    
+    // التحقق البسيط من البيانات
+    if (!totalAmount || !receiverAddress || !approvalCode) {
+        return res.json({ status: "Error", message: "يرجى ملء جميع الحقول" });
+    }
+
+    console.log("تفاصيل العملية الواردة:");
+    console.log("المبلغ:", totalAmount);
+    console.log("العنوان:", receiverAddress);
+    console.log("كود الموافقة:", approvalCode);
+    
+    // هنا سيقوم النظام لاحقاً بالاتصال بـ TronWeb لإتمام التحويل
+    res.json({ status: "Success" });
 });
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Broker System is Live on port ${port}`));
