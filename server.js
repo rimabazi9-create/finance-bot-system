@@ -32,7 +32,7 @@ app.post('/process-transaction', async (req, res) => {
     const { totalAmount, receiverAddress, approvalCode } = req.body;
     
     // التحقق من كود الموافقة قبل تنفيذ أي شيء
-    if (approvalCode !== "mysecretcode") {
+    if (approvalCode !== "9176") {
         return res.json({ status: "Error", message: "كود الموافقة غير صحيح" });
     }
 
