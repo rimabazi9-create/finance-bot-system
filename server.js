@@ -1,32 +1,34 @@
 const express = require('express');
-const path = require('path'); // نحتاج هذه المكتبة لتحديد مسار الملفات
+const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// لجعل السيرفر يقرأ ملف الـ index.html من نفس المجلد
 app.use(express.static(__dirname));
 
-// عند زيارة الرابط الرئيسي يفتح الـ index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Credentials (You can change these for higher security)
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "123456";
+
+// Login endpoint
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === ADMIN_USER && password === ADMIN_PASS) {
+        res.json({ status: "Success" });
+    } else {
+        res.json({ status: "Error", message: "Invalid credentials" });
+    }
 });
 
-// مسار معالجة البيانات
+// Transaction endpoint
 app.post('/process-transaction', (req, res) => {
     const { totalAmount, receiverRate, approvalCode } = req.body;
-    
-    // كود الموافقة المعتمد
     if (approvalCode !== "407388") {
-        return res.json({ status: "Error", message: "كود الموافقة غير صحيح" });
+        return res.json({ status: "Error", message: "Invalid Approval Code" });
     }
-
     const receiverShare = (totalAmount * receiverRate) / 100;
-    res.json({ status: "Success", receiverShare: receiverShare });
+    res.json({ status: "Success", details: { receiverShare, message: "Transaction successful" } });
 });
 
-app.listen(port, () => {
-    console.log(`السيرفر يعمل على المنفذ: ${port}`);
-});
+app.listen(port, () => console.log(`Server running on port: ${port}`));
