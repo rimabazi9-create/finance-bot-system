@@ -1,52 +1,29 @@
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const TronWeb = require('tronweb');
-
 const app = express();
-const port = process.env.PORT || 3000;
-
 app.use(express.json());
-app.use(express.static(__dirname));
 
-// Configuration for Shasta Testnet
+// إعداد الاتصال بشبكة Shasta الحقيقية
 const tronWeb = new TronWeb({
-    fullHost: 'https://api.shasta.trongrid.io'
+    fullHost: 'https://api.shasta.trongrid.io',
+    headers: { 'TRON-PRO-API-KEY': 'ضعي_مفتاح_API_الخاص_بك_هنا' } // ضعي مفتاحك من TronGrid
 });
 
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "123456";
-
-// Login endpoint
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
-        res.json({ status: "Success" });
-    } else {
-        res.json({ status: "Error", message: "Invalid credentials" });
-    }
-});
-
-// Transaction endpoint (Simulation + Real Blockchain check)
-app.post('/process-transaction', async (req, res) => {
-    const { totalAmount, receiverAddress, approvalCode } = req.body;
-    
-    if (approvalCode !== "407388") {
-        return res.json({ status: "Error", message: "Invalid Approval Code" });
-    }
-
+// عملية تحويل تجريبية حقيقية
+app.post('/transfer', async (req, res) => {
+    const { toAddress, amount } = req.body;
     try {
-        // Validate address format on Tron Network
-        const isValid = tronWeb.isAddress(receiverAddress);
-        if (!isValid) return res.json({ status: "Error", message: "Invalid Tron Address" });
-
-        const logEntry = `Date: ${new Date().toISOString()} | Amount: ${totalAmount} | Receiver: ${receiverAddress}\n`;
-        fs.appendFile('transactions.log', logEntry, (err) => { if (err) console.log(err); });
-
-        res.json({ status: "Success", details: "Transaction Verified on Testnet" });
-    } catch (e) {
-        res.json({ status: "Error", message: "Blockchain Error" });
+        // إنشاء المعاملة
+        const transaction = await tronWeb.transactionBuilder.sendTrx(toAddress, amount * 1000000);
+        // توقيع المعاملة (يتطلب وجود المفتاح الخاص في ملف الأمان)
+        const signedTx = await tronWeb.trx.sign(transaction, process.env.PRIVATE_KEY);
+        // إرسال المعاملة إلى البلوكشين
+        const receipt = await tronWeb.trx.sendRawTransaction(signedTx);
+        
+        res.json({ status: "Success", txid: receipt.txid });
+    } catch (error) {
+        res.json({ status: "Error", message: error.message });
     }
 });
 
-app.listen(port, () => console.log(`Server running on port: ${port}`));
+app.listen(3000, () => console.log('Broker System is Live on Shasta Testnet'));
