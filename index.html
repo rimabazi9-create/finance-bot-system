@@ -1,46 +1,228 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Broker System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECDSA Signature - Fixed</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.12.0/dist/ethers.umd.min.js">
+    </script>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; display: flex; justify-content: center; }
-        .box { width: 350px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, button { width: 100%; padding: 10px; margin: 10px 0; }
-        #dashboard { display: none; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            padding: 2rem;
+            direction: ltr;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+        }
+        .hash-box {
+            background: #0f172a;
+            color: #a5f3fc;
+            padding: 1.2rem;
+            border-radius: 10px;
+            font-family: monospace;
+            word-break: break-all;
+            margin-top: 0.5rem;
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin: 15px 5px;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .result-box {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 20px;
+        }
+        .valid {
+            background: #dcfce7;
+            border-left: 6px solid #22c55e;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .invalid {
+            background: #fee2e2;
+            border-left: 6px solid #ef4444;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .item-value {
+            background: #1e293b;
+            color: #a5f3fc;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>📜 ECDSA Signature - Fixed</h1>
+        <p>This page correctly signs and verifies the message using <code>ethers.js</code>.</p>
 
-<div class="box" id="loginArea">
-    <h2>تسجيل الدخول</h2>
-    <input type="text" id="user" placeholder="اسم المستخدم">
-    <input type="password" id="pass" placeholder="كلمة المرور">
-    <button onclick="login()">دخول</button>
-</div>
+        <div style="margin-top:10px;"><strong>🔐 Original Message (Text):</strong></div>
+        <div class="hash-box" id="messageDisplay">⏳ Generating...</div>
 
-<div class="box" id="dashboard">
-    <h2>لوحة التحكم</h2>
-    <input type="number" id="totalAmount" placeholder="المبلغ">
-    <input type="text" id="receiverAddress" placeholder="عنوان المحفظة">
-    <input type="text" id="approvalCode" 9176 placeholder="كود الموافقة">
-    <button onclick="process()">تنفيذ المعاملة</button>
-    <div id="result"></div>
-</div>
+        <div style="margin-top:10px;"><strong>🔐 SHA-256 Hash (Message Hex):</strong></div>
+        <div class="hash-box" id="hashDisplay">⏳ Calculating...</div>
 
-<script>
-    async function login() {
-        const res = await fetch('/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: document.getElementById('user').value, password: document.getElementById('pass').value }) });
-        const data = await res.json();
-        if (data.status === "Success") { document.getElementById('loginArea').style.display = 'none'; document.getElementById('dashboard').style.display = 'block'; }
-        else { alert(data.message); }
-    }
+        <button class="btn" id="signBtn">✍️ Sign Message Now</button>
 
-    async function process() {
-        const res = await fetch('/process-transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ totalAmount: document.getElementById('totalAmount').value, receiverAddress: document.getElementById('receiverAddress').value, approvalCode: document.getElementById('approvalCode').value }) });
-        const data = await res.json();
-        document.getElementById('result').innerText = data.status === "Success" ? "نجاح: " + data.txid : "خطأ: " + data.message;
-    }
-</script>
+        <div class="result-box" id="resultBox" style="display:none;">
+            <div class="item">
+                <div class="item-label"><strong>📄 Message (Hex):</strong></div>
+                <div class="item-value" id="resultMessage">...</div>
+            </div>
+            <div class="item">
+                <div class="item-label"><strong>✍️ Signature (Hex):</strong></div>
+                <div class="item-value" id="resultSignature">...</div>
+            </div>
+            <div class="item">
+                <div class="item-label"><strong>👤 Signer Address:</strong></div>
+                <div class="item-value" id="resultSigner">...</div>
+            </div>
+            <div id="verifyStatus"></div>
+        </div>
+
+        <div class="footer">Hosted on Render.com · Signature generated in-browser (Off-chain)</div>
+    </div>
+
+    <script>
+        // ---------------------------------------------
+        // 1. البيانات (نفس البيانات السابقة)
+        // ---------------------------------------------
+        const DATA = {
+            "financial": {
+                "beneficiary": "Lebenswerk Bau und Boden Brensbach GmbH",
+                "address": "Ludwigsplatz 1, 67059 Ludwigshafen",
+                "totalAmountEUR": "4,154,000,000.00",
+                "swiftRef": "20260612MT10365491003919291",
+                "bic": "DEUTDEDB545",
+                "bankEmail": "deutsche-bankg@db.com",
+                "txDate": "2026-06-12"
+            },
+            "blockchain": {
+                "network": "Ethereum Mainnet",
+                "chainId": 1,
+                "defaultWallet": "0xF3d5391839BB5a1Bba15dF173230FFe86FEc6eff",
+                "masterWallet": "0x5a52E96BAcdaBb82fd05763E25335261B270Efcb",
+                "usdtContract": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                "nodeIP": "162.254.35.81",
+                "securityAlgorithm": "RSA-2048_ECDSA_SHA-256"
+            }
+        };
+
+        const PRIVATE_KEY = "1d810943752a2b2f85280a6149da40361600cae79789492431efc4ddf30630b5";
+        const EXPECTED_SIGNER = "0xF3d5391839BB5a1Bba15dF173230FFe86FEc6eff";
+
+        let currentMessageHex = null;
+        let currentSignature = null;
+
+        // ---------------------------------------------
+        // 2. حساب الهاش (SHA-256) من البيانات
+        // ---------------------------------------------
+        async function computeHash() {
+            // تحويل البيانات إلى نص JSON (بدون مسافات)
+            const jsonString = JSON.stringify(DATA, null, 0);
+            const encoder = new TextEncoder();
+            const dataBuffer = encoder.encode(jsonString);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // ---------------------------------------------
+        // 3. التوقيع والتحقق (الطريقة الصحيحة)
+        // ---------------------------------------------
+        async function signAndVerify() {
+            const resultBox = document.getElementById('resultBox');
+            const signBtn = document.getElementById('signBtn');
+
+            try {
+                signBtn.disabled = true;
+                signBtn.textContent = '⏳ Signing...';
+
+                // حساب الهاش
+                currentMessageHex = await computeHash();
+                document.getElementById('hashDisplay').textContent = currentMessageHex;
+
+                // إنشاء المحفظة والتوقيع
+                const wallet = new ethers.Wallet(PRIVATE_KEY);
+                // التوقيع على الهاش مباشرة (كـ bytes)
+                const signatureObj = await wallet.signMessage(currentMessageHex);
+                currentSignature = signatureObj;
+
+                // عرض النتائج
+                document.getElementById('resultMessage').textContent = currentMessageHex;
+                document.getElementById('resultSignature').textContent = currentSignature;
+                document.getElementById('resultSigner').textContent = EXPECTED_SIGNER;
+
+                // التحقق من صحة التوقيع
+                const recovered = ethers.verifyMessage(currentMessageHex, currentSignature);
+                const isValid = (recovered.toLowerCase() === EXPECTED_SIGNER.toLowerCase());
+
+                const verifyDiv = document.getElementById('verifyStatus');
+                if (isValid) {
+                    verifyDiv.className = 'valid';
+                    verifyDiv.innerHTML = '✅ <strong>Verification: SUCCESS</strong> — The signature is valid and matches the signer address.';
+                } else {
+                    verifyDiv.className = 'invalid';
+                    verifyDiv.innerHTML = '❌ <strong>Verification: FAILED</strong> — The recovered address does not match the signer.';
+                }
+
+                resultBox.style.display = 'block';
+
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+                console.error(error);
+            } finally {
+                signBtn.disabled = false;
+                signBtn.textContent = '✍️ Sign Message Now';
+            }
+        }
+
+        // ---------------------------------------------
+        // 4. تشغيل عند التحميل
+        // ---------------------------------------------
+        window.addEventListener('DOMContentLoaded', async () => {
+            // عرض الرسالة الأصلية
+            const jsonString = JSON.stringify(DATA, null, 0);
+            document.getElementById('messageDisplay').textContent = jsonString;
+
+            // عرض الهاش
+            const hash = await computeHash();
+            document.getElementById('hashDisplay').textContent = hash;
+
+            document.getElementById('signBtn').addEventListener('click', signAndVerify);
+        });
+    </script>
 </body>
 </html>
